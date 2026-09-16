@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CFOP Trainer — Caleb Sanguino</title>
+<meta name="description" content="Entrenador del método Fridrich (CFOP): F2L, OLL y PLL, offline.">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CFOP Trainer">
+<style>
+:root{
+  --bg:#0f1115;
+  --bg-panel:#171a21;
+  --bg-panel-2:#1e222b;
+  --line:#2a2f3a;
+  --text:#e8e9ec;
+  --text-dim:#8b909c;
+  --yellow:#f2c744;
+  --yellow-dim:#7a6425;
+  --teal:#3fa796;
+  --green:#5bc36a;
+  --red:#e0554f;
+  --violet:#8b7bf0;
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  -webkit-tap-highlight-color:transparent; overscroll-behavior:none;}
+body{padding-bottom:70px; min-height:100vh;}
+h1,h2,h3{font-weight:700; letter-spacing:-0.01em; margin:0 0 8px;}
+button{font-family:var(--sans); cursor:pointer;}
+.mono{font-family:var(--mono);}
+
+.topbar{position:sticky; top:0; z-index:20; background:rgba(15,17,21,0.92); backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line); padding:14px 16px; display:flex; align-items:center; justify-content:space-between;}
+.topbar .brand{display:flex; align-items:center; gap:10px;}
+.cubeicon{width:26px;height:26px; border-radius:6px; object-fit:cover; display:block;}
+.topbar h1{font-size:16px;}
+
+main{max-width:760px; margin:0 auto; padding:16px;}
+.view{display:none;}
+.view.active{display:block; animation:fadein .18s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+
+.navbar{position:fixed; bottom:0; left:0; right:0; z-index:30; display:flex; background:var(--bg-panel);
+  border-top:1px solid var(--line); padding:6px 4px calc(6px + env(safe-area-inset-bottom));}
+.navbtn{flex:1; background:none; border:none; color:var(--text-dim); font-size:11px; padding:8px 2px;
+  display:flex; flex-direction:column; align-items:center; gap:4px; border-radius:10px;}
+.navbtn .dot{width:6px;height:6px;border-radius:50%; background:transparent;}
+.navbtn.active{color:var(--yellow);}
+.navbtn.active .dot{background:var(--yellow);}
+
+.card{background:var(--bg-panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.18); transition:border-color .15s ease;}
+.card h2{font-size:14px; text-transform:none; color:var(--text-dim); font-weight:600; margin-bottom:10px;}
+.row{display:flex; gap:8px; flex-wrap:wrap;}
+.chip{padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--bg-panel-2);
+  color:var(--text-dim); font-size:13px; font-weight:600;}
+.chip.on{border-color:var(--yellow); color:var(--yellow); background:rgba(242,199,68,0.08);}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 18px; border-radius:11px;
+  border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); font-size:14px; font-weight:600;
+  transition:transform .1s ease, filter .15s ease;}
+.btn.primary{background:var(--yellow); color:#1a1608; border-color:var(--yellow); box-shadow:0 4px 16px rgba(242,199,68,0.25);}
+.btn.danger{color:var(--red); border-color:rgba(224,85,79,0.4);}
+.btn.block{width:100%;}
+.btn:active{transform:scale(0.98);}
+.btn:hover{filter:brightness(1.08);}
+.chip{transition:transform .1s ease, border-color .15s ease;}
+.muted{color:var(--text-dim); font-size:13px; line-height:1.5;}
+select,input[type=text],textarea{background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+  border-radius:9px; padding:10px 12px; font-size:14px; font-family:var(--sans); width:100%;}
+textarea{font-family:var(--mono); min-height:110px; resize:vertical;}
+label.field{display:block; font-size:12px; color:var(--text-dim); margin-bottom:5px; font-weight:600;}
+
+.case-label{text-align:center; font-size:13px; color:var(--text-dim); margin-bottom:2px;}
+.case-name{text-align:center; font-size:20px; font-weight:700; margin-bottom:14px;}
+.scramble-box{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:11px; padding:14px;
+  font-family:var(--mono); font-size:16px; text-align:center; letter-spacing:1px; margin-bottom:14px; word-spacing:6px;}
+.alg-box{background:var(--bg-panel-2); border:1px dashed var(--line); border-radius:11px; padding:14px;
+  font-family:var(--mono); font-size:15px; text-align:center; color:var(--teal); margin-bottom:14px; word-spacing:6px;}
+.alg-box.empty{color:var(--text-dim); font-family:var(--sans); font-style:italic;}
+
+.timer-zone{user-select:none; -webkit-user-select:none; touch-action:manipulation; text-align:center;
+  border-radius:14px; padding:18px 10px 10px; background:var(--bg-panel-2); border:1px solid var(--line); cursor:pointer;}
+.timer-display{font-family:var(--mono); font-size:56px; font-weight:700; color:var(--text); letter-spacing:-1px;}
+.timer-display.holding{color:var(--green);}
+.timer-display.running{color:var(--yellow);}
+.timer-hint{font-size:12px; color:var(--text-dim); margin-top:2px;}
+
+.btnrow{display:flex; gap:10px;}
+.btnrow .btn{flex:1;}
+.progress-track{height:6px; border-radius:99px; background:var(--bg-panel-2); overflow:hidden; margin:10px 0 4px;}
+.progress-fill{height:100%; background:var(--yellow);}
+.small-muted{font-size:12px; color:var(--text-dim); text-align:center;}
+
+table.stats{width:100%; border-collapse:collapse; font-size:13px;}
+table.stats th,table.stats td{padding:8px 6px; border-bottom:1px solid var(--line); text-align:left;}
+table.stats th{color:var(--text-dim); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em;}
+.badge{display:inline-block; padding:2px 8px; border-radius:6px; background:var(--bg-panel-2); font-size:11px; color:var(--text-dim);}
+.badge.filled{color:var(--teal); border:1px solid rgba(63,167,150,0.3);}
+.badge.empty{color:var(--red); border:1px solid rgba(224,85,79,0.25);}
+
+.caselist{display:flex; flex-direction:column; gap:6px; max-height:340px; overflow:auto; padding-right:4px;}
+.caserow{display:flex; align-items:center; justify-content:space-between; padding:9px 10px; background:var(--bg-panel-2);
+  border:1px solid var(--line); border-radius:9px; font-size:13px;}
+.caserow .n{color:var(--text-dim); width:34px; flex-shrink:0;}
+.caserow .name{flex:1;}
+.caserow button{background:none;border:none;color:var(--teal);font-size:12px;font-weight:700;}
+
+hr.sep{border:none; border-top:1px solid var(--line); margin:14px 0;}
+.stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.stat-box{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center;}
+.stat-box .v{font-family:var(--mono); font-size:20px; font-weight:700;}
+.stat-box .l{font-size:11px; color:var(--text-dim); margin-top:2px;}
+.stats-inline{margin-top:14px;}
+.stats-inline h3{font-size:12px; color:var(--text-dim); font-weight:600; margin-bottom:8px;}
+
+/* ---- Historial de tiempos con borrado individual ---- */
+.history-label{font-size:11px; color:var(--text-dim); margin:14px 0 8px; text-transform:uppercase; letter-spacing:.03em; font-weight:600;}
+.time-history{display:flex; flex-wrap:wrap; gap:6px;}
+.time-chip{display:flex; align-items:center; gap:6px; background:var(--bg-panel-2); border:1px solid var(--line);
+  border-radius:8px; padding:5px 6px 5px 10px; font-family:var(--mono); font-size:12.5px; color:var(--text);}
+.time-chip.best{border-color:rgba(91,195,106,0.5); color:var(--green);}
+.time-chip .del-time{background:rgba(224,85,79,0.12); border:none; color:var(--red); width:18px; height:18px;
+  border-radius:50%; font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;}
+.time-chip .del-time:active{transform:scale(0.9);}
+
+/* ---- Hero de bienvenida ---- */
+.hero-card{position:relative; overflow:hidden; border-radius:18px; padding:26px 20px 22px;
+  background:linear-gradient(160deg,#1c2030 0%, #171a21 55%, #14171e 100%);
+  border:1px solid var(--line); margin-bottom:14px; text-align:center;}
+.hero-glow{position:absolute; inset:-40% -20% auto -20%; height:180px; z-index:0; pointer-events:none;
+  background:radial-gradient(closest-side, rgba(242,199,68,0.20), rgba(63,167,150,0.12) 55%, transparent 75%);
+  filter:blur(6px);}
+.hero-content{position:relative; z-index:1;}
+.hero-cube{width:56px; height:56px; margin:0 auto 12px; border-radius:14px; object-fit:cover; display:block;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  animation:heroSpin 7s ease-in-out infinite;}
+@keyframes heroSpin{0%,100%{transform:rotate(-6deg) scale(1);} 50%{transform:rotate(6deg) scale(1.05);}}
+.hero-title{font-size:24px; font-weight:800; letter-spacing:-0.02em;
+  background:linear-gradient(90deg,var(--yellow),var(--teal));
+  -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:4px;}
+.hero-subtitle{font-size:13px; color:var(--text-dim); margin-bottom:16px;}
+.hero-credit{display:inline-flex; flex-direction:column; gap:2px; align-items:center; padding:10px 16px;
+  border-radius:12px; background:rgba(242,199,68,0.06); border:1px solid rgba(242,199,68,0.25);}
+.hero-credit-label{font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.08em; font-weight:700;}
+.hero-credit-name{font-size:13.5px; font-weight:700; color:var(--yellow); letter-spacing:-0.01em;}
+
+/* ---- Aprendizaje (modo estudio, sin cronómetro) ---- */
+.learn-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px;}
+.learn-card{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center;}
+.learn-card .learn-id{font-size:12px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
+.learn-card svg{width:100%; height:auto; border-radius:8px; display:block; margin-bottom:8px;}
+.learn-card .learn-alg{font-family:var(--mono); font-size:11px; color:var(--teal); line-height:1.4; word-break:break-word;}
+.learn-card .learn-alg.empty{font-family:var(--sans); color:var(--text-dim); font-style:italic;}
+
+/* ---- Info: estadísticas ---- */
+.stat-grid-5{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+@media (min-width:520px){ .stat-grid-5{grid-template-columns:repeat(5,1fr);} }
+.stats-table-wrap{max-height:420px; overflow:auto;}
+table.casestats{width:100%; border-collapse:collapse; font-size:12.5px;}
+table.casestats th, table.casestats td{padding:7px 6px; border-bottom:1px solid var(--line); text-align:center; white-space:nowrap;}
+table.casestats th{color:var(--text-dim); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; background:var(--bg-panel-2);}
+table.casestats td:first-child, table.casestats th:first-child{text-align:left;}
+table.casestats tr:nth-child(even) td{background:rgba(255,255,255,0.015);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><img class="cubeicon" src="cube-glyph.png" alt="CFOP Trainer"><h1>CFOP Trainer</h1></div>
+  <span class="small-muted" id="topHint">sin conexión</span>
+</div>
+
+<main>
+
+<!-- INICIO -->
+<section class="view active" id="view-inicio">
+  <div class="hero-card">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <img class="hero-cube" src="cube-glyph.png" alt="CFOP Trainer">
+      <div class="hero-title">CFOP Trainer</div>
+      <div class="hero-subtitle">Método Fridrich · F2L + OLL + PLL · 100% offline</div>
+      <div class="hero-credit">
+        <span class="hero-credit-label">Desarrollado por</span>
+        <span class="hero-credit-name">Ing. Químico Caleb Santiago Sanguino Perez</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Bienvenido</h2>
+    <p class="muted">Practica el método Fridrich (CFOP) completo: F2L, OLL y PLL, con los algoritmos más votados de SpeedCubeDB. Funciona sin internet.</p>
+  </div>
+  <div class="card">
+    <h2>Progreso de algoritmos cargados</h2>
+    <div class="stat-grid" id="inicioProgress"></div>
+  </div>
+  <div class="card">
+    <h2>Empezar a practicar</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn primary block" onclick="goto('practica')">🎲 Práctica aleatoria</button>
+    </div>
+    <button class="btn block" onclick="goto('secuencial')">📋 Práctica secuencial</button>
+  </div>
+</section>
+
+<!-- PRACTICA ALEATORIA -->
+<section class="view" id="view-practica">
+  <div class="card">
+    <h2>Configuración</h2>
+    <label class="field">Paso(s) a practicar</label>
+    <div class="row" id="stepChips" style="margin-bottom:12px"></div>
+    <p class="muted">Se elegirán casos al azar dentro de los pasos marcados, sin repetir el mismo dos veces seguidas.</p>
+  </div>
+  <div class="card" id="practiceCard">
+    <div class="case-label" id="pCaseLabel">Pulsa "Nuevo caso" para empezar</div>
+    <div class="case-name" id="pCaseName">—</div>
+    <div class="scramble-box" id="pScramble">—</div>
+    <div class="btnrow" style="margin-bottom:10px">
+      <button class="btn" onclick="showAlg('p')">👁 Ver algoritmo</button>
+      <button class="btn" onclick="newRandomCase()">🔀 Nuevo caso</button>
+    </div>
+    <div class="alg-box empty" id="pAlg" style="display:none"></div>
+    <div class="timer-zone" id="pZone">
+      <div class="timer-display" id="pTimer">0.00</div>
+      <div class="timer-hint" id="pHint">Mantén presionado (o barra espaciadora) y suelta para iniciar</div>
+    </div>
+    <div class="stats-inline" id="pStatsInline"></div>
+  </div>
+</section>
+
+<!-- PRACTICA SECUENCIAL -->
+<section class="view" id="view-secuencial">
+  <div class="card">
+    <h2>Configuración</h2>
+    <label class="field">Paso a practicar</label>
+    <div class="row" id="seqStepChips" style="margin-bottom:6px"></div>
+    <p class="muted">Recorre los casos en orden numérico (1, 2, 3…), el mismo orden estándar de referencia que usa SpeedCubeDB.</p>
+  </div>
+  <div class="card">
+    <div class="progress-track"><div class="progress-fill" id="seqProgressFill" style="width:0%"></div></div>
+    <div class="small-muted" id="seqProgressLabel">0 / 0</div>
+    <hr class="sep">
+    <div class="case-label" id="sCaseLabel">—</div>
+    <div class="case-name" id="sCaseName">—</div>
+    <div class="scramble-box" id="sScramble">—</div>
+    <div class="btnrow" style="margin-bottom:10px">
+      <button class="btn" onclick="showAlg('s')">👁 Ver algoritmo</button>
+    </div>
+    <div class="alg-box empty" id="sAlg" style="display:none"></div>
+    <div class="timer-zone" id="sZone">
+      <div class="timer-display" id="sTimer">0.00</div>
+      <div class="timer-hint" id="sHint">Mantén presionado (o barra espaciadora) y suelta para iniciar</div>
+    </div>
+    <div class="btnrow" style="margin-top:10px">
+      <button class="btn" onclick="seqNav(-1)">← Anterior</button>
+      <button class="btn" onclick="seqNav(1)">Siguiente →</button>
+    </div>
+    <div class="stats-inline" id="sStatsInline"></div>
+  </div>
+</section>
+
+<!-- CASOS (editar algoritmos) -->
+<section class="view" id="view-casos">
+  <div class="card">
+    <h2>Importar / editar algoritmos</h2>
+    <p class="muted">Pega aquí algoritmos en formato <code>PASO N: movimientos</code>, uno por línea.</p>
+    <textarea id="importBox" placeholder="OLL 5: ...
+F2L 12: ...
+PLL 9: ..."></textarea>
+    <button class="btn primary block" style="margin-top:10px" onclick="importAlgs()">Importar</button>
+    <p class="small-muted" id="importResult"></p>
+  </div>
+  <div class="card">
+    <h2>Ver / editar por caso</h2>
+    <div class="row" id="casosStepChips" style="margin-bottom:10px"></div>
+    <div class="caselist" id="caseList"></div>
+  </div>
+  <div class="card">
+    <h2>Copia de seguridad</h2>
+    <div class="btnrow">
+      <button class="btn" onclick="exportData()">⬇ Exportar datos</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">⬆ Importar archivo</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importFile(event)">
+    <button class="btn danger block" style="margin-top:10px" onclick="resetAlgs()">Restaurar algoritmos por defecto</button>
+    <button class="btn danger block" style="margin-top:10px" onclick="resetStats()">Borrar historial de tiempos</button>
+  </div>
+</section>
+
+<!-- APRENDIZAJE (solo estudio, sin cronómetro) -->
+<section class="view" id="view-aprender">
+  <div class="card">
+    <h2>Modo aprendizaje</h2>
+    <p class="muted">Repasa visualmente todos los casos: cómo se ve el cubo y cuál es el algoritmo. Sin cronómetro, para memorizar con calma.</p>
+    <div class="row" id="learnStepChips" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <div class="learn-grid" id="learnGrid"></div>
+  </div>
+</section>
+
+<!-- INFO: estadísticas generales -->
+<section class="view" id="view-info">
+  <div class="card">
+    <h2>Resumen general</h2>
+    <div class="stat-grid-5" id="infoGlobalStats"></div>
+  </div>
+  <div class="card">
+    <h2>Por paso</h2>
+    <div id="infoStepStats"></div>
+  </div>
+  <div class="card">
+    <h2>Detalle por caso</h2>
+    <div class="row" id="infoStepChips" style="margin-bottom:10px"></div>
+    <div class="stats-table-wrap">
+      <table class="casestats" id="infoCaseTable"></table>
+    </div>
+    <p class="small-muted" id="infoEmptyNote" style="margin-top:8px"></p>
+  </div>
+  <div class="card" style="text-align:center">
+    <div class="hero-credit" style="width:100%">
+      <span class="hero-credit-label">Desarrollado por</span>
+      <span class="hero-credit-name">Ing. Químico Caleb Santiago Sanguino Perez</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="navbar">
+  <button class="navbtn active" data-v="inicio" onclick="goto('inicio')"><span class="dot"></span>Inicio</button>
+  <button class="navbtn" data-v="practica" onclick="goto('practica')"><span class="dot"></span>Aleatorio</button>
+  <button class="navbtn" data-v="secuencial" onclick="goto('secuencial')"><span class="dot"></span>Secuencial</button>
+  <button class="navbtn" data-v="aprender" onclick="goto('aprender')"><span class="dot"></span>Aprender</button>
+  <button class="navbtn" data-v="casos" onclick="goto('casos')"><span class="dot"></span>Casos</button>
+  <button class="navbtn" data-v="info" onclick="goto('info')"><span class="dot"></span>Info</button>
+</div>
+
+<script>
+/* ================== DATOS: algoritmo más votado en SpeedCubeDB por caso ================== */
+
+const PLL_DEFAULT = [
+["Aa","x R' U R' D2 R U' R' D2 R2 x'"],
+["Ab","x R2 D2 R U R' D2 R U' R x'"],
+["E","y x' R U' R' D R U R' D' R U R' D R U' R' D' x"],
+["F","y R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R"],
+["Ga","R2 U R' U R' U' R U' R2 D U' R' U R D'"],
+["Gb","D R' U' R U D' R2 U R' U R U' R U' R2"],
+["Gc","R2 U' R U' R U R' U R2 D' U R U' R' D"],
+["Gd","R U R' U' D R2 U' R U' R' U R' U R2 D'"],
+["H","M2 U M2 U2 M2 U M2"],
+["Ja","y2 x R2 F R F' R U2 r' U r U2 x'"],
+["Jb","R U R' F' R U R' U' R' F R2 U' R'"],
+["Na","R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'"],
+["Nb","R' U R U' R' F' U' F R U R' F R' F' R U' R"],
+["Ra","y R U' R' U' R U R D R' U' R D' R' U2 R'"],
+["Rb","R' U2 R U2 R' F R U R' U' R' F' R2"],
+["T","R U R' U' R' F R2 U' R' U' R U R' F'"],
+["Ua","y2 M2 U M U2 M' U M2"],
+["Ub","y2 M2 U' M U2 M' U' M2"],
+["V","R' U R' U' R D' R' D R' U D' R2 U' R2 D R2"],
+["Y","F R U' R' U' R U R' F' R U R' U' R' F R F'"],
+["Z","M' U' M2 U' M2 U' M' U2 M2"]
+];
+
+const OLL_DEFAULT = [
+["1","R U2 R2 F R F' U2 R' F R F'"],
+["2","y' R U' R2 D' r U r' D R2 U R'"],
+["3","y' f R U R' U' f' U' F R U R' U' F'"],
+["4","y' R' F2 R2 U2 R' F' R U2 R2 F2 R"],
+["5","r' U2 R U R' U r"],
+["6","r U2 R' U' R U' r'"],
+["7","r U R' U R U2 r'"],
+["8","y2 r' U' R U' R' U2 r"],
+["9","y R U R' U' R' F R2 U R' U' F'"],
+["10","R U R' U R' F R F' R U2 R'"],
+["11","r' R2 U R' U R U2 R' U M'"],
+["12","y' M' R' U' R U' R' U2 R U' M"],
+["13","F U R U2 R' U' R U R' F'"],
+["14","R' F R U R' F' R F U' F'"],
+["15","r' U' r R' U' R U r' U r"],
+["16","r U r' R U R' U' r U' r'"],
+["17","R U R' U R' F R F' U2 R' F R F'"],
+["18","y R U2 R2 F R F' U2 M' U R U' r'"],
+["19","y S' R U R' S U' R' F R F'"],
+["20","r U R' U' M2 U R U' R' U' M'"],
+["21","R U R' U R U' R' U R U2 R'"],
+["22","R U2 R2 U' R2 U' R2 U2 R"],
+["23","R2 D R' U2 R D' R' U2 R'"],
+["24","r U R' U' r' F R F'"],
+["25","R U2 R D R' U2 R D' R2"],
+["26","y R U2 R' U' R U' R'"],
+["27","R U R' U R U2 R'"],
+["28","r U R' U' M U R U' R'"],
+["29","r2 D' r U r' D r2 U' r' U' r"],
+["30","y' r' D' r U' r' D r2 U' r' U r U r'"],
+["31","R' U' F U R U' R' F' R"],
+["32","S R U R' U' R' F R f'"],
+["33","R U R' U' R' F R F'"],
+["34","y f R f' U' r' U' R U M'"],
+["35","R U2 R2 F R F' R U2 R'"],
+["36","y R U R2 F' U' F U R2 U2 R'"],
+["37","F R' F' R U R U' R'"],
+["38","R U R' U R U' R' U' R' F R F'"],
+["39","y' f' r U r' U' r' F r S"],
+["40","y R' F R U R' U' F' U R"],
+["41","y2 R U R' U R U2 R' F R U R' U' F'"],
+["42","R' U' R U' R' U2 R F R U R' U' F'"],
+["43","y R' U' F' U F R"],
+["44","f R U R' U' f'"],
+["45","F R U R' U' F'"],
+["46","R' U' R' F R F' U R"],
+["47","y' F R' F' R U2 R U' R' U R U2 R'"],
+["48","F R U R' U' R U R' U' F'"],
+["49","y2 r U' r2 U r2 U r2 U' r"],
+["50","r' U r2 U' r2 U' r2 U r'"],
+["51","y2 F U R U' R' U R U' R' F'"],
+["52","y2 R' F' U' F U' R U R' U R"],
+["53","r' U' R U' R' U R U' R' U2 r"],
+["54","r U R' U R U' R' U R U2 r'"],
+["55","y R' F U R U' R2 F' R2 U R' U' R"],
+["56","r U r' U R U' R' U R U' R' r U' r'"],
+["57","R U R' U' M' U R U' r'"]
+];
+
+const F2L_DEFAULT = [
+["1","U R U' R'"],
+["2","F R' F' R"],
+["3","F' U' F"],
+["4","R U R'"],
+["5","U' R U R' U2 R U' R'"],
+["6","U' r U' R' U R U r'"],
+["7","U' R U2 R' U' R U2 R'"],
+["8","r' U2 R2 U R2 U r"],
+["9","U' R U' R' U F' U' F"],
+["10","U' R U R' U R U R'"],
+["11","U' R U2 R' U F' U' F"],
+["12","R U' R' U R U' R' U2 R U' R'"],
+["13","U R' U R U' R' U' R"],
+["14","U' R U' R' U R U R'"],
+["15","M U r U' r' U' M'"],
+["16","R U' R' U2 F' U' F"],
+["17","R U2 R' U' R U R'"],
+["18","U' R' U2 R U R' U' R"],
+["19","U R U2 R' U R U' R'"],
+["20","U' R' U2 R U' R' U R"],
+["21","U2 R U R' U R U' R'"],
+["22","r U' r' U2 r U r'"],
+["23","U R U' R' U' R U' R' U R U' R'"],
+["24","F U R U' R' F' R U' R'"],
+["25","U' R' F R F' R U R'"],
+["26","U R U' R' F R' F' R"],
+["27","R U' R' U R U' R'"],
+["28","R U R' U' F R' F' R"],
+["29","R' F R F' U R U' R'"],
+["30","R U R' U' R U R'"],
+["31","U' R' F R F' R U' R'"],
+["32","U R U' R' U R U' R' U R U' R'"],
+["33","U' R U' R' U2 R U' R'"],
+["34","U R U R' U2 R U R'"],
+["35","U' R U R' U F' U' F"],
+["36","U F' U' F U' R U R'"],
+["37","R2 U2 F R2 F' U2 R' U R'"],
+["38","R U' R' U' R U R' U2 R U' R'"],
+["39","R U' R' U R U2 R' U R U' R'"],
+["40","r U' r' U2 r U r' R U R'"],
+["41","R U' R' r U' r' U2 r U r'"]
+];
+
+const STEP_META = {
+  F2L:{label:"F2L", full:"F2L — Primeras dos capas", data:F2L_DEFAULT},
+  OLL:{label:"OLL", full:"OLL — Orientar última capa", data:OLL_DEFAULT},
+  PLL:{label:"PLL", full:"PLL — Permutar última capa", data:PLL_DEFAULT}
+};
+
+/* ================== ALMACENAMIENTO ================== */
+const LS_ALGS = "cfop_algs_v2";
+const LS_STATS = "cfop_stats_v2";
+
+function loadAlgs(){
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(LS_ALGS) || "{}"); }catch(e){ saved = {}; }
+  const out = {};
+  for(const step in STEP_META){
+    out[step] = {};
+    STEP_META[step].data.forEach(([id, alg])=>{
+      out[step][id] = (saved[step] && saved[step][id] !== undefined) ? saved[step][id] : alg;
+    });
+  }
+  return out;
+}
+let ALGS = loadAlgs();
+function saveAlgs(){ localStorage.setItem(LS_ALGS, JSON.stringify(ALGS)); }
+
+function loadStats(){
+  try{ return JSON.parse(localStorage.getItem(LS_STATS) || "{}"); }catch(e){ return {}; }
+}
+let STATS = loadStats();
+function saveStats(){ localStorage.setItem(LS_STATS, JSON.stringify(STATS)); }
+
+/* Línea de tiempo cronológica (para Ao5 / Ao12 globales y por paso, sin importar el caso) */
+const LS_TIMELINE = "cfop_timeline_v1";
+function loadTimeline(){
+  try{ const t = JSON.parse(localStorage.getItem(LS_TIMELINE) || "[]"); return Array.isArray(t)?t:[]; }catch(e){ return []; }
+}
+let TIMELINE = loadTimeline();
+function saveTimeline(){ localStorage.setItem(LS_TIMELINE, JSON.stringify(TIMELINE)); }
+
+function recordTime(step, caseId, ms){
+  STATS[step] = STATS[step] || {};
+  STATS[step][caseId] = STATS[step][caseId] || [];
+  STATS[step][caseId].push(ms);
+  saveStats();
+  TIMELINE.push({step, id:caseId, ms});
+  saveTimeline();
+}
+function getCaseTimes(step, caseId){ return (STATS[step] && STATS[step][caseId]) || []; }
+function getStepTimes(step){
+  const all = [];
+  if(STATS[step]) for(const id in STATS[step]) all.push(...STATS[step][id]);
+  return all;
+}
+function fmtSec(ms){ return (ms/1000).toFixed(2); }
+
+/* Promedio estilo WCA: de los últimos N tiempos, descarta el mejor y el peor, promedia el resto */
+function calcAoN(times, n){
+  if(!times || times.length < n) return null;
+  const slice = times.slice(-n);
+  const sorted = slice.slice().sort((a,b)=>a-b);
+  sorted.shift(); sorted.pop();
+  if(sorted.length===0) return null;
+  return sorted.reduce((a,b)=>a+b,0)/sorted.length;
+}
+function calcStatsBundle(times){
+  const count = times.length;
+  const best = count? Math.min(...times) : null;
+  const avg = count? times.reduce((a,b)=>a+b,0)/count : null;
+  const ao5 = calcAoN(times,5);
+  const ao12 = calcAoN(times,12);
+  return {count, best, avg, ao5, ao12};
+}
+function fmtStatVal(v){ return v===null||v===undefined ? "—" : fmtSec(v)+"s"; }
+
+function renderStatsInline(containerId, step, caseId){
+  const el = document.getElementById(containerId);
+  const caseTimes = getCaseTimes(step, caseId);
+  const stepTimes = getStepTimes(step);
+  const caseBest = caseTimes.length? Math.min(...caseTimes) : null;
+  const caseAvg = caseTimes.length? caseTimes.reduce((a,b)=>a+b,0)/caseTimes.length : null;
+  const stepAvg = stepTimes.length? stepTimes.reduce((a,b)=>a+b,0)/stepTimes.length : null;
+
+  let historyHtml = "";
+  if(caseTimes.length){
+    const chips = caseTimes.map((ms,i)=>{
+      const isBest = ms===caseBest;
+      return `<div class="time-chip ${isBest?'best':''}">
+        <span>${fmtSec(ms)}s</span>
+        <button class="del-time" onclick="deleteTime('${containerId}','${step}','${caseId}',${i})" title="Borrar solo este tiempo">✕</button>
+      </div>`;
+    }).reverse().join("");
+    historyHtml = `<div class="history-label">Historial de este caso · toca ✕ para borrar uno solo</div>
+      <div class="time-history">${chips}</div>`;
+  }
+
+  el.innerHTML = `
+    <h3>Estadísticas</h3>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="v">${caseTimes.length}</div><div class="l">Intentos ${step} ${caseId}</div></div>
+      <div class="stat-box"><div class="v">${caseBest!==null?fmtSec(caseBest):'—'}</div><div class="l">Mejor este caso</div></div>
+      <div class="stat-box"><div class="v">${caseAvg!==null?fmtSec(caseAvg):'—'}</div><div class="l">Promedio este caso</div></div>
+    </div>
+    <div class="stat-grid" style="margin-top:10px">
+      <div class="stat-box"><div class="v">${stepTimes.length}</div><div class="l">Total ${step}</div></div>
+      <div class="stat-box"><div class="v">${stepAvg!==null?fmtSec(stepAvg):'—'}</div><div class="l">Promedio ${step}</div></div>
+      <div class="stat-box"><div class="v">${stepTimes.length? fmtSec(Math.min(...stepTimes)):'—'}</div><div class="l">Mejor ${step}</div></div>
+    </div>
+    ${historyHtml}`;
+}
+
+/* Borra un único tiempo (por índice) de un caso específico, sin afectar los demás */
+function deleteTime(containerId, step, caseId, index){
+  if(!STATS[step] || !STATS[step][caseId]) return;
+  STATS[step][caseId].splice(index, 1);
+  if(STATS[step][caseId].length === 0) delete STATS[step][caseId];
+  saveStats();
+  renderStatsInline(containerId, step, caseId);
+}
+
+/* ================== MOVIMIENTOS: invertir para generar scramble ================== */
+function invertMove(mv){
+  if(mv.endsWith("2")) return mv;
+  if(mv.endsWith("'")) return mv.slice(0,-1);
+  return mv + "'";
+}
+function invertAlg(alg){
+  if(!alg || !alg.trim()) return "";
+  return alg.trim().split(/\s+/).reverse().map(invertMove).join(" ");
+}
+function scrambleFor(alg){
+  const inv = invertAlg(alg);
+  return inv || "(agrega el algoritmo de este caso primero)";
+}
+
+/* ================== NAVEGACIÓN ================== */
+function goto(v){
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("active"));
+  document.getElementById("view-"+v).classList.add("active");
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("active", b.dataset.v===v));
+  if(v==="inicio") renderInicio();
+  if(v==="practica") renderPracticaConfig();
+  if(v==="secuencial") renderSecuencialConfig();
+  if(v==="casos") renderCasos();
+  if(v==="aprender") renderAprenderView();
+  if(v==="info") renderInfoView();
+}
+
+/* ================== INICIO ================== */
+function renderInicio(){
+  const wrap = document.getElementById("inicioProgress");
+  wrap.innerHTML = "";
+  for(const step in STEP_META){
+    const total = STEP_META[step].data.length;
+    const filled = Object.values(ALGS[step]).filter(a=>a && a.trim()).length;
+    wrap.innerHTML += `<div class="stat-box"><div class="v">${filled}/${total}</div><div class="l">${step}</div></div>`;
+  }
+}
+
+/* ================== PRACTICA ALEATORIA ================== */
+let randomSteps = new Set(["F2L","OLL","PLL"]);
+let currentRandom = null;
+
+function renderPracticaConfig(){
+  const stepWrap = document.getElementById("stepChips");
+  stepWrap.innerHTML = "";
+  Object.keys(STEP_META).forEach(step=>{
+    const on = randomSteps.has(step);
+    stepWrap.innerHTML += `<button class="chip ${on?'on':''}" onclick="toggleRandomStep('${step}')">${step}</button>`;
+  });
+  if(currentRandom) renderStatsInline("pStatsInline", currentRandom.step, currentRandom.id);
+}
+function toggleRandomStep(step){
+  if(randomSteps.has(step)){ if(randomSteps.size>1) randomSteps.delete(step); }
+  else randomSteps.add(step);
+  renderPracticaConfig();
+}
+function newRandomCase(){
+  const pool = [];
+  randomSteps.forEach(step=>{
+    STEP_META[step].data.forEach(([id])=>{
+      if(!(currentRandom && currentRandom.step===step && currentRandom.id===id)){
+        pool.push({step,id});
+      }
+    });
+  });
+  if(pool.length===0){ alert("Selecciona al menos un paso."); return; }
+  const pick = pool[Math.floor(Math.random()*pool.length)];
+  const alg = ALGS[pick.step][pick.id] || "";
+  currentRandom = {step:pick.step, id:pick.id, alg};
+  document.getElementById("pCaseLabel").textContent = STEP_META[pick.step].full;
+  document.getElementById("pCaseName").textContent = pick.step + " " + pick.id;
+  document.getElementById("pScramble").textContent = scrambleFor(alg);
+  document.getElementById("pAlg").style.display = "none";
+  document.getElementById("pAlg").classList.toggle("empty", !alg);
+  document.getElementById("pAlg").textContent = alg || "Sin algoritmo guardado — ve a la pestaña Casos para agregarlo.";
+  resetTimerUI('p');
+  renderStatsInline("pStatsInline", pick.step, pick.id);
+}
+function showAlg(prefix){
+  const box = document.getElementById(prefix+"Alg");
+  box.style.display = box.style.display==="none" ? "block" : "none";
+}
+
+/* ================== PRACTICA SECUENCIAL ================== */
+let seqStep = "F2L";
+let seqIndex = 0;
+
+function renderSecuencialConfig(){
+  const wrap = document.getElementById("seqStepChips");
+  wrap.innerHTML = "";
+  Object.keys(STEP_META).forEach(step=>{
+    wrap.innerHTML += `<button class="chip ${seqStep===step?'on':''}" onclick="setSeqStep('${step}')">${step}</button>`;
+  });
+  renderSeqCase();
+}
+function setSeqStep(step){ seqStep = step; seqIndex = 0; renderSecuencialConfig(); }
+function seqNav(dir){
+  const total = STEP_META[seqStep].data.length;
+  seqIndex = (seqIndex + dir + total) % total;
+  renderSeqCase();
+}
+function renderSeqCase(){
+  const data = STEP_META[seqStep].data;
+  const [id] = data[seqIndex];
+  const alg = ALGS[seqStep][id] || "";
+  document.getElementById("sCaseLabel").textContent = STEP_META[seqStep].full;
+  document.getElementById("sCaseName").textContent = seqStep + " " + id;
+  document.getElementById("sScramble").textContent = scrambleFor(alg);
+  document.getElementById("sAlg").style.display = "none";
+  document.getElementById("sAlg").classList.toggle("empty", !alg);
+  document.getElementById("sAlg").textContent = alg || "Sin algoritmo guardado — ve a la pestaña Casos para agregarlo.";
+  document.getElementById("seqProgressLabel").textContent = (seqIndex+1)+" / "+data.length;
+  document.getElementById("seqProgressFill").style.width = (((seqIndex+1)/data.length)*100)+"%";
+  resetTimerUI('s');
+  renderStatsInline("sStatsInline", seqStep, id);
+}
+
+/* ================== TIMER estilo cstimer: mantener y soltar ================== */
+const timers = {
+  p:{running:false, holding:false, start:0, raf:null, caseRef:()=>currentRandom},
+  s:{running:false, holding:false, start:0, raf:null, caseRef:()=>{ const [id]=STEP_META[seqStep].data[seqIndex]; return {step:seqStep,id}; }}
+};
+
+function resetTimerUI(prefix){
+  const t = timers[prefix];
+  t.running=false; t.holding=false;
+  if(t.raf) cancelAnimationFrame(t.raf);
+  const disp = document.getElementById(prefix+"Timer");
+  disp.textContent = "0.00";
+  disp.classList.remove("running","holding");
+  document.getElementById(prefix+"Hint").textContent = "Mantén presionado (o barra espaciadora) y suelta para iniciar";
+}
+
+function timerHoldStart(prefix){
+  const t = timers[prefix];
+  if(t.running){
+    // toque mientras corre -> detener
+    stopTimer(prefix);
+    return;
+  }
+  if(t.holding) return;
+  t.holding = true;
+  const disp = document.getElementById(prefix+"Timer");
+  disp.classList.add("holding");
+  document.getElementById(prefix+"Hint").textContent = "Suelta para iniciar";
+}
+function timerHoldEnd(prefix){
+  const t = timers[prefix];
+  if(t.holding && !t.running){
+    t.holding = false;
+    startTimer(prefix);
+  }
+}
+function startTimer(prefix){
+  const t = timers[prefix];
+  const disp = document.getElementById(prefix+"Timer");
+  t.running = true;
+  t.start = performance.now();
+  disp.classList.remove("holding");
+  disp.classList.add("running");
+  document.getElementById(prefix+"Hint").textContent = "Toca (o pulsa espacio) para detener";
+  const tick = ()=>{
+    if(!t.running) return;
+    disp.textContent = fmtSec(performance.now()-t.start);
+    t.raf = requestAnimationFrame(tick);
+  };
+  tick();
+}
+function stopTimer(prefix){
+  const t = timers[prefix];
+  const disp = document.getElementById(prefix+"Timer");
+  t.running = false;
+  if(t.raf) cancelAnimationFrame(t.raf);
+  const elapsed = performance.now()-t.start;
+  disp.textContent = fmtSec(elapsed);
+  disp.classList.remove("running");
+  document.getElementById(prefix+"Hint").textContent = "Mantén presionado (o barra espaciadora) y suelta para iniciar";
+  const ref = t.caseRef();
+  if(ref){
+    recordTime(ref.step, ref.id, elapsed);
+    if(prefix==='p') renderStatsInline("pStatsInline", ref.step, ref.id);
+    if(prefix==='s') renderStatsInline("sStatsInline", ref.step, ref.id);
+  }
+}
+
+['p','s'].forEach(prefix=>{
+  const zone = document.getElementById(prefix+"Zone");
+  zone.addEventListener('pointerdown', (e)=>{ e.preventDefault(); timerHoldStart(prefix); });
+  zone.addEventListener('pointerup', (e)=>{ e.preventDefault(); timerHoldEnd(prefix); });
+  zone.addEventListener('pointercancel', (e)=>{ timerHoldEnd(prefix); });
+  zone.addEventListener('pointerleave', (e)=>{ if(timers[prefix].holding && !timers[prefix].running){ timerHoldEnd(prefix); } });
+});
+
+let spaceHeld = false;
+document.addEventListener("keydown", (e)=>{
+  if(e.code!=="Space" || e.repeat) return;
+  const activeView = document.querySelector(".view.active").id;
+  if(activeView==="view-practica"){ e.preventDefault(); timerHoldStart('p'); }
+  if(activeView==="view-secuencial"){ e.preventDefault(); timerHoldStart('s'); }
+});
+document.addEventListener("keyup", (e)=>{
+  if(e.code!=="Space") return;
+  const activeView = document.querySelector(".view.active").id;
+  if(activeView==="view-practica"){ e.preventDefault(); timerHoldEnd('p'); }
+  if(activeView==="view-secuencial"){ e.preventDefault(); timerHoldEnd('s'); }
+});
+
+/* ================== CASOS (editor) ================== */
+let casosStep = "F2L";
+function renderCasos(){
+  const wrap = document.getElementById("casosStepChips");
+  wrap.innerHTML = "";
+  Object.keys(STEP_META).forEach(step=>{
+    wrap.innerHTML += `<button class="chip ${casosStep===step?'on':''}" onclick="setCasosStep('${step}')">${step}</button>`;
+  });
+  renderCaseList();
+}
+function setCasosStep(step){ casosStep = step; renderCasos(); }
+function renderCaseList(){
+  const list = document.getElementById("caseList");
+  list.innerHTML = "";
+  STEP_META[casosStep].data.forEach(([id])=>{
+    const alg = ALGS[casosStep][id] || "";
+    const filled = !!alg.trim();
+    list.innerHTML += `<div class="caserow">
+      <span class="n">${id}</span>
+      <span class="name">${filled ? '<span class="mono" style="font-size:12px">'+alg+'</span>' : '<span class="badge empty">vacío</span>'}</span>
+      <button onclick="editCase('${casosStep}','${id}')">Editar</button>
+    </div>`;
+  });
+}
+function editCase(step,id){
+  const current = ALGS[step][id] || "";
+  const val = prompt("Algoritmo para "+step+" "+id+":", current);
+  if(val===null) return;
+  ALGS[step][id] = val.trim();
+  saveAlgs();
+  renderCaseList();
+}
+
+/* ================== IMPORTAR TEXTO ================== */
+function importAlgs(){
+  const raw = document.getElementById("importBox").value;
+  const lines = raw.split("\n").map(l=>l.trim()).filter(Boolean);
+  let count = 0;
+  lines.forEach(line=>{
+    const m = line.match(/^(F2L|OLL|PLL)\s*(\S+)\s*:\s*(.+)$/i);
+    if(!m) return;
+    const step = m[1].toUpperCase();
+    let id = m[2].replace(/:$/,"");
+    const alg = m[3].trim();
+    const match = STEP_META[step].data.find(([caseId])=> caseId===id || caseId.split(" ")[0]===id);
+    if(match){
+      ALGS[step][match[0]] = alg;
+      count++;
+    }
+  });
+  saveAlgs();
+  document.getElementById("importResult").textContent = count+" algoritmo(s) importado(s).";
+  document.getElementById("importBox").value = "";
+  renderCaseList();
+}
+
+/* ================== EXPORT / IMPORT JSON ================== */
+function exportData(){
+  const blob = new Blob([JSON.stringify({algs:ALGS, stats:STATS, timeline:TIMELINE}, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "cfop-trainer-backup.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importFile(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(data.algs){ ALGS = data.algs; saveAlgs(); }
+      if(data.stats){ STATS = data.stats; saveStats(); }
+      if(data.timeline){ TIMELINE = data.timeline; saveTimeline(); }
+      alert("Datos importados correctamente.");
+      renderCasos(); renderInicio();
+    }catch(e){ alert("Archivo inválido."); }
+  };
+  reader.readAsText(file);
+}
+function resetAlgs(){
+  if(!confirm("¿Restaurar todos los algoritmos a los valores por defecto? Perderás tus ediciones.")) return;
+  localStorage.removeItem(LS_ALGS);
+  ALGS = loadAlgs();
+  renderCasos(); renderInicio();
+}
+function resetStats(){
+  if(!confirm("¿Borrar todo el historial de tiempos?")) return;
+  STATS = {};
+  saveStats();
+  TIMELINE = [];
+  saveTimeline();
+  if(currentRandom) renderStatsInline("pStatsInline", currentRandom.step, currentRandom.id);
+  const [id] = STEP_META[seqStep].data[seqIndex];
+  renderStatsInline("sStatsInline", seqStep, id);
+  if(document.getElementById("view-info").classList.contains("active")) renderInfoView();
+}
+
+/* ================== SIMULADOR DE CUBO (para diagramas visuales) ================== */
+/* Modelo de 54 stickers en coordenadas 3D; cada movimiento rota los stickers de una capa. */
+function cubeMakeSolved(){
+  const stickers = [];
+  const faces = {
+    U:{axis:0, val:1, color:'W'}, D:{axis:0, val:-1, color:'Y'},
+    F:{axis:2, val:1, color:'G'}, B:{axis:2, val:-1, color:'B'},
+    R:{axis:3, val:1, color:'R'}, L:{axis:3, val:-1, color:'O'}
+  };
+  // axis: 1=x fixed, 2=z fixed, 3=... (using simple branch below instead)
+  const defs = [
+    ['U','y',1,'W'], ['D','y',-1,'Y'],
+    ['F','z',1,'G'], ['B','z',-1,'B'],
+    ['R','x',1,'R'], ['L','x',-1,'O']
+  ];
+  defs.forEach(([name, axis, val, color])=>{
+    for(let a=-1;a<=1;a++){
+      for(let b=-1;b<=1;b++){
+        let pos, facing=[0,0,0];
+        if(axis==='x'){ pos=[val,a,b]; facing[0]=val; }
+        else if(axis==='y'){ pos=[a,val,b]; facing[1]=val; }
+        else { pos=[a,b,val]; facing[2]=val; }
+        stickers.push({pos, facing, color});
+      }
+    }
+  });
+  return stickers;
+}
+const cubeRotX = p=>[p[0],-p[2],p[1]];
+const cubeInvRotX = p=>[p[0],p[2],-p[1]];
+const cubeRotY = p=>[p[2],p[1],-p[0]];
+const cubeInvRotY = p=>[-p[2],p[1],p[0]];
+const cubeRotZ = p=>[-p[1],p[0],p[2]];
+const cubeInvRotZ = p=>[p[1],-p[0],p[2]];
+function cubeApplyRotation(stickers, filterFn, rotFn){
+  stickers.forEach(s=>{
+    if(filterFn(s.pos)){ s.pos = rotFn(s.pos); s.facing = rotFn(s.facing); }
+  });
+}
+const CUBE_MOVES = {
+  R:{filter:p=>p[0]===1, rot:cubeInvRotX}, L:{filter:p=>p[0]===-1, rot:cubeRotX},
+  U:{filter:p=>p[1]===1, rot:cubeInvRotY}, D:{filter:p=>p[1]===-1, rot:cubeRotY},
+  F:{filter:p=>p[2]===1, rot:cubeInvRotZ}, B:{filter:p=>p[2]===-1, rot:cubeRotZ},
+  M:{filter:p=>p[0]===0, rot:cubeRotX}, E:{filter:p=>p[1]===0, rot:cubeRotY}, S:{filter:p=>p[2]===0, rot:cubeInvRotZ},
+  r:{filter:p=>p[0]>=0, rot:cubeInvRotX}, l:{filter:p=>p[0]<=0, rot:cubeRotX},
+  u:{filter:p=>p[1]>=0, rot:cubeInvRotY}, d:{filter:p=>p[1]<=0, rot:cubeRotY},
+  f:{filter:p=>p[2]>=0, rot:cubeInvRotZ}, b:{filter:p=>p[2]<=0, rot:cubeRotZ},
+  x:{filter:()=>true, rot:cubeInvRotX}, y:{filter:()=>true, rot:cubeInvRotY}, z:{filter:()=>true, rot:cubeInvRotZ}
+};
+function cubeApplyMoveToken(stickers, token){
+  const m = token.match(/^([A-Za-z]+)('?)(\d?)$/);
+  if(!m) return;
+  const def = CUBE_MOVES[m[1]];
+  if(!def) return;
+  const num = m[3] ? parseInt(m[3]) : 1;
+  const times = num===2 ? 2 : (m[2]==="'" ? 3 : 1);
+  for(let i=0;i<times;i++) cubeApplyRotation(stickers, def.filter, def.rot);
+}
+function cubeApplyAlg(stickers, alg){
+  if(!alg || !alg.trim()) return;
+  alg.trim().split(/\s+/).forEach(tok=>cubeApplyMoveToken(stickers, tok));
+}
+const CUBE_COLORS = {W:'#f4f4f4', Y:'#f2c744', G:'#3fa796', B:'#5b7fd4', R:'#e0554f', O:'#f08a3c'};
+function cubeRenderSVG(stickers, size){
+  size = size || 200;
+  const s = size*0.27;
+  const cos30 = Math.cos(Math.PI/6), sin30 = Math.sin(Math.PI/6);
+  const vecX=[s*cos30,s*sin30], vecZ=[-s*cos30,s*sin30], vecY=[0,-s];
+  const O=[size/2, size*0.62];
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]], add=(a,b)=>[a[0]+b[0],a[1]+b[1]], scl=(a,k)=>[a[0]*k,a[1]*k];
+  const originF = sub(sub(O,vecX),vecY), originR = sub(sub(O,vecZ),vecY), originU = sub(sub(O,vecX),vecZ);
+  function cell(origin,v1,v2,i,j){
+    const c=add(origin, add(scl(v1,i), scl(v2,j)));
+    return [add(c,add(scl(v1,-0.5),scl(v2,-0.5))), add(c,add(scl(v1,0.5),scl(v2,-0.5))),
+            add(c,add(scl(v1,0.5),scl(v2,0.5))), add(c,add(scl(v1,-0.5),scl(v2,0.5)))];
+  }
+  let polys=[];
+  stickers.forEach(st=>{
+    const [x,y,z]=st.pos, [fx,fy,fz]=st.facing;
+    let pts=null;
+    if(fy===1) pts = cell(originU, vecX, vecZ, x, z);
+    else if(fz===1) pts = cell(originF, vecX, vecY, x, y);
+    else if(fx===1) pts = cell(originR, vecZ, vecY, z, y);
+    if(pts) polys.push({pts, color:CUBE_COLORS[st.color]});
+  });
+  const body = polys.map(p=>{
+    const pts = p.pts.map(pt=>pt[0].toFixed(1)+','+pt[1].toFixed(1)).join(' ');
+    return `<polygon points="${pts}" fill="${p.color}" stroke="#0f1115" stroke-width="2.5"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+}
+function cubeDiagramForAlg(alg){
+  const cube = cubeMakeSolved();
+  cubeApplyAlg(cube, invertAlg(alg));
+  return cubeRenderSVG(cube, 180);
+}
+
+/* ================== APRENDIZAJE (modo estudio, sin cronómetro) ================== */
+let learnStep = "F2L";
+function renderAprenderView(){
+  const wrap = document.getElementById("learnStepChips");
+  wrap.innerHTML = "";
+  Object.keys(STEP_META).forEach(step=>{
+    wrap.innerHTML += `<button class="chip ${learnStep===step?'on':''}" onclick="setLearnStep('${step}')">${step}</button>`;
+  });
+  renderLearnGrid();
+}
+function setLearnStep(step){ learnStep = step; renderAprenderView(); }
+function renderLearnGrid(){
+  const grid = document.getElementById("learnGrid");
+  const data = STEP_META[learnStep].data;
+  let html = "";
+  data.forEach(([id])=>{
+    const alg = ALGS[learnStep][id] || "";
+    const svg = cubeDiagramForAlg(alg);
+    const algHtml = alg
+      ? `<div class="learn-alg">${alg}</div>`
+      : `<div class="learn-alg empty">Sin algoritmo</div>`;
+    html += `<div class="learn-card">
+      <div class="learn-id">${learnStep} ${id}</div>
+      ${svg}
+      ${algHtml}
+    </div>`;
+  });
+  grid.innerHTML = html;
+}
+
+/* ================== INFO: ESTADÍSTICAS GENERALES ================== */
+let infoStep = "F2L";
+function statLabelBoxes(bundle, prefix){
+  return `
+    <div class="stat-box"><div class="v">${bundle.count}</div><div class="l">${prefix} intentos</div></div>
+    <div class="stat-box"><div class="v">${fmtStatVal(bundle.best)}</div><div class="l">Mejor</div></div>
+    <div class="stat-box"><div class="v">${fmtStatVal(bundle.avg)}</div><div class="l">Promedio</div></div>
+    <div class="stat-box"><div class="v">${fmtStatVal(bundle.ao5)}</div><div class="l">Ao5</div></div>
+    <div class="stat-box"><div class="v">${fmtStatVal(bundle.ao12)}</div><div class="l">Ao12</div></div>`;
+}
+function renderInfoView(){
+  // Resumen global (todas las líneas de tiempo, todos los pasos)
+  const globalTimes = TIMELINE.map(e=>e.ms);
+  document.getElementById("infoGlobalStats").innerHTML = statLabelBoxes(calcStatsBundle(globalTimes), "Total");
+
+  // Por paso
+  let stepHtml = "";
+  Object.keys(STEP_META).forEach(step=>{
+    const times = TIMELINE.filter(e=>e.step===step).map(e=>e.ms);
+    const bundle = calcStatsBundle(times);
+    stepHtml += `<div style="margin-bottom:16px">
+      <h3 style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px">${step}</h3>
+      <div class="stat-grid-5">${statLabelBoxes(bundle, step)}</div>
+    </div>`;
+  });
+  document.getElementById("infoStepStats").innerHTML = stepHtml;
+
+  // Chips de paso para la tabla detallada
+  const chipWrap = document.getElementById("infoStepChips");
+  chipWrap.innerHTML = "";
+  Object.keys(STEP_META).forEach(step=>{
+    chipWrap.innerHTML += `<button class="chip ${infoStep===step?'on':''}" onclick="setInfoStep('${step}')">${step}</button>`;
+  });
+
+  renderInfoCaseTable();
+}
+function setInfoStep(step){ infoStep = step; renderInfoView(); }
+function renderInfoCaseTable(){
+  const table = document.getElementById("infoCaseTable");
+  const emptyNote = document.getElementById("infoEmptyNote");
+  const data = STEP_META[infoStep].data;
+  const rows = [];
+  data.forEach(([id])=>{
+    const times = getCaseTimes(infoStep, id);
+    if(times.length===0) return;
+    const b = calcStatsBundle(times);
+    rows.push(`<tr>
+      <td>${infoStep} ${id}</td>
+      <td>${b.count}</td>
+      <td>${fmtStatVal(b.best)}</td>
+      <td>${fmtStatVal(b.avg)}</td>
+      <td>${fmtStatVal(b.ao5)}</td>
+      <td>${fmtStatVal(b.ao12)}</td>
+    </tr>`);
+  });
+  if(rows.length===0){
+    table.innerHTML = "";
+    emptyNote.textContent = "Todavía no hay tiempos registrados para " + infoStep + ". Practica en Aleatorio o Secuencial para ver tus estadísticas aquí.";
+  } else {
+    emptyNote.textContent = "";
+    table.innerHTML = `<thead><tr>
+      <th>Caso</th><th>Intentos</th><th>Mejor</th><th>Promedio</th><th>Ao5</th><th>Ao12</th>
+    </tr></thead><tbody>${rows.join("")}</tbody>`;
+  }
+}
+
+/* ================== INIT ================== */
+renderInicio();
+renderPracticaConfig();
+
+/* ================== PWA: registrar service worker para uso offline ================== */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
